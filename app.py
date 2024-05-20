@@ -1,14 +1,16 @@
 import streamlit as st
 import pvleopard
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
-from pydub import AudioSegment
+import soundfile as sf
 import matplotlib.pyplot as plt
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
 from langchain_core.output_parsers import StrOutputParser
 from dotenv import load_dotenv
 import os
+
 load_dotenv()
+
 # Initialize Picovoice Leopard
 leopard = pvleopard.create(access_key=os.getenv("ACCESS_KEY"))
 
@@ -34,10 +36,9 @@ prompt = ChatPromptTemplate.from_messages([("system", system_prompt), ("human", 
 
 # Function to transcribe audio
 def transcribe_audio(audio_file):
-    audio = AudioSegment.from_file(audio_file)
-    audio = audio.set_channels(1).set_frame_rate(16000)
+    audio, sample_rate = sf.read(audio_file)
     temp_wav_path = "temp.wav"
-    audio.export(temp_wav_path, format="wav")
+    sf.write(temp_wav_path, audio, sample_rate)
     transcription, _ = leopard.process_file(temp_wav_path)
     return transcription
 
@@ -96,7 +97,8 @@ def main():
         visualize_scores(analysis_scores)
 
         # Invoke the chain for additional feedback
-        output = prompt | chat | parser | {"context": transcription, "coherence_score": analysis_scores["Coherence"], "fluency_score": analysis_scores["Fluency"], "pronunciation_score": analysis_scores["Pronunciation"], "lexical_resource_score": analysis_scores["Lexical Resource"], "grammar_score": analysis_scores["Grammatical Range and Accuracy"]}
+        chain = prompt | chat | parser 
+        output = chain.invoke({"context": transcription, "coherence_score": analysis_scores["Coherence"], "fluency_score": analysis_scores["Fluency"], "pronunciation_score": analysis_scores["Pronunciation"], "lexical_resource_score": analysis_scores["Lexical Resource"], "grammar_score": analysis_scores["Grammatical Range and Accuracy"]})
         st.write("Additional Feedback:", output)
 
 if __name__ == "__main__":
