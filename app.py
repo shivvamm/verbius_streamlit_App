@@ -6,9 +6,11 @@ import matplotlib.pyplot as plt
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
 from langchain_core.output_parsers import StrOutputParser
-
+from dotenv import load_dotenv
+import os
+load_dotenv()
 # Initialize Picovoice Leopard
-leopard = pvleopard.create(access_key='nIIxrNb7xCW8kEHZlRveWHURxN1uAnZkBLQfYMoXBVqeKpbpxUMqgA==')
+leopard = pvleopard.create(access_key=os.getenv("ACCESS_KEY"))
 
 # Load a pre-trained transformer model from Hugging Face for classification
 model_name = "facebook/bart-large-mnli"  # You can choose any model suitable for text evaluation
@@ -16,7 +18,7 @@ tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForSequenceClassification.from_pretrained(model_name)
 
 # Initialize the Groq model
-chat = ChatGroq(temperature=0, groq_api_key="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", model_name="llama3-8b-8192")
+chat = ChatGroq(temperature=0, groq_api_key=os.getenv("GROQ_API_KEY"), model_name="llama3-8b-8192")
 
 # Initialize the output parser
 parser = StrOutputParser()
